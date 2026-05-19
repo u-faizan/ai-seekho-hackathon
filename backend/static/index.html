@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Operations Agent — Dev Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .log-line { animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateX(-4px); } to { opacity:1; transform:none; } }
+    .diff-add { background:rgba(34,197,94,.1); border-left:3px solid #22c55e; }
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-thumb { background:#475569; border-radius:2px; }
+    #drop-zone { transition: border-color .2s, background .2s; }
+    #drop-zone.drag-over { border-color:#6366f1; background:rgba(99,102,241,.07); }
+    .tab-btn.active { background:#1e293b; color:#e2e8f0; border-color:#334155; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+<!-- Header -->
+<header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-20">
+  <div class="max-w-7xl mx-auto px-5 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center font-bold text-sm">A</div>
+      <div>
+        <h1 class="font-semibold text-white text-sm">Autonomous Operations Agent</h1>
+        <p class="text-slate-500 text-xs">Dev Console · Powered by Google Gemini</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="input-type-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono">text</span>
+      <div id="status-badge" class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-slate-800 text-slate-400">
+        <span class="w-2 h-2 rounded-full bg-slate-500"></span> Idle
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-5 py-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+  <!-- ══ LEFT ══ -->
+  <div class="flex flex-col gap-5">
+
+    <!-- Input panel -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-4">
+        <button id="tab-text" onclick="switchTab('text')"
+          class="tab-btn active text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-slate-400 transition">
+          📝 Text / URL
+        </button>
+        <button id="tab-pdf" onclick="switchTab('pdf')"
+          class="tab-btn text-xs px-3 py-1.5 rounded-lg border border-transparent text-slate-500 transition">
+          📄 PDF
+        </button>
+      </div>
+
+      <!-- TEXT/URL tab -->
+      <div id="panel-text">
+        <textarea id="input-text" rows="7"
+          placeholder="Paste plain text, a news article URL (https://...), or any business report..."
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none leading-relaxed"></textarea>
+        <div class="flex gap-2 mt-3 flex-wrap items-center">
+          <span class="text-xs text-slate-600">Try:</span>
+          <button onclick="fillExample(1)" class="text-xs px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">Sales Drop</button>
+          <button onclick="fillExample(2)" class="text-xs px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">Fuel Price</button>
+          <button onclick="fillExample(3)" class="text-xs px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">Complaints</button>
+        </div>
+      </div>
+
+      <!-- PDF tab -->
+      <div id="panel-pdf" class="hidden">
+        <div id="drop-zone"
+          class="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center cursor-pointer"
+          ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)"
+          onclick="document.getElementById('file-input').click()">
+          <div class="text-3xl mb-2">📄</div>
+          <p class="text-sm text-slate-300 font-medium">Drop a PDF here or click to browse</p>
+          <p class="text-xs text-slate-500 mt-1">Gemini reads PDFs natively — no text extraction needed</p>
+          <input id="file-input" type="file" class="hidden" accept=".pdf,application/pdf" onchange="onFileSelect(event)" />
+        </div>
+        <div id="file-preview" class="hidden mt-3 flex items-center gap-3 bg-slate-800 rounded-lg px-4 py-3">
+          <span class="text-xl">📄</span>
+          <div class="flex-1 min-w-0">
+            <p id="file-name" class="text-sm text-white truncate"></p>
+            <p id="file-size" class="text-xs text-slate-400"></p>
+          </div>
+          <button onclick="clearFile()" class="text-slate-500 hover:text-red-400 text-xs transition">✕</button>
+        </div>
+        <textarea id="file-context" rows="2"
+          placeholder="Optional: add extra context about this PDF..."
+          class="w-full mt-3 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"></textarea>
+      </div>
+
+      <button id="run-btn" onclick="runPipeline()"
+        class="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+        ⚡ Run Agentic Flow
+      </button>
+    </div>
+
+    <!-- Before / After diff -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">📊 Before vs. After State</h2>
+      <div id="state-diff" class="text-slate-500 text-sm italic">Run the pipeline to see state changes...</div>
+    </div>
+
+    <!-- AI-decided chart (hidden until AI says so) -->
+    <div id="chart-card" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">📈 Data Visualization</h2>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-violet-900/40 text-violet-300 border border-violet-800">AI-decided</span>
+      </div>
+      <p id="chart-reason" class="text-xs text-slate-500 mb-3"></p>
+      <canvas id="insight-chart" height="150"></canvas>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT ══ -->
+  <div class="flex flex-col gap-5">
+
+    <!-- Agent trace -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">🖥 Agent Execution Trace</h2>
+        <button onclick="clearLogs()" class="text-xs text-slate-500 hover:text-slate-300 transition">Clear</button>
+      </div>
+      <div class="flex flex-col gap-1.5 mb-3">
+        <div class="flex items-center gap-2 text-xs" id="step-ie">
+          <span class="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-slate-500 text-[10px]">1</span>
+          <span class="text-slate-500">IE+IA Agent — Insight &amp; Impact</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs" id="step-da">
+          <span class="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-slate-500 text-[10px]">2</span>
+          <span class="text-slate-500">DA-Agent — Decision Making</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs" id="step-es">
+          <span class="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-slate-500 text-[10px]">3</span>
+          <span class="text-slate-500">ES-Agent — Execution Simulation</span>
+        </div>
+      </div>
+      <div id="log-terminal"
+        class="bg-slate-950 rounded-lg p-3 h-64 overflow-y-auto mono text-xs text-green-400 space-y-0.5 border border-slate-800">
+        <div class="text-slate-600">// Execution logs will appear here...</div>
+      </div>
+    </div>
+
+    <!-- Output cards -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">🎯 Agent Output</h2>
+      <div id="result-area" class="space-y-3">
+        <div class="text-slate-500 text-sm italic">Pipeline output will appear here...</div>
+      </div>
+    </div>
+
+    <!-- Live DB -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">🗄 Active Campaigns (Live DB)</h2>
+        <div class="flex gap-3">
+          <button onclick="loadDashboard()" class="text-xs text-blue-400 hover:text-blue-300 transition">↻ Refresh</button>
+          <button onclick="resetSandbox()" class="text-xs text-red-400 hover:text-red-300 transition">↺ Reset</button>
+        </div>
+      </div>
+      <div id="campaigns-table" class="text-slate-500 text-sm italic">Loading...</div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API = '';
+  let currentTab = 'text';
+  let selectedFile = null;
+  let chartInstance = null;
+
+  const EXAMPLES = {
+    1: "URGENT: Regional sales report shows delivery orders in Lahore dropped by 25% over the last 7 days due to road blockages. Customer service tickets spiked by 40%. Local revenue is suffering.",
+    2: "Breaking: Government announces 20% increase in petroleum prices effective immediately. This will directly impact last-mile delivery costs across all regions.",
+    3: "Customer complaint surge: 200+ complaints this week about delayed deliveries in Karachi. Social media sentiment turned negative. NPS dropped from 72 to 54."
+  };
+
+  // ── Tabs ────────────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    currentTab = tab;
+    ['text','pdf'].forEach(t => {
+      document.getElementById(`panel-${t}`).classList.toggle('hidden', t !== tab);
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    });
+  }
+
+  function fillExample(n) { document.getElementById('input-text').value = EXAMPLES[n]; }
+
+  // ── File handling ────────────────────────────────────────────────────────────
+  function onDragOver(e)  { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+  function onDragLeave(e) { document.getElementById('drop-zone').classList.remove('drag-over'); }
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) setFile(f);
+  }
+  function onFileSelect(e) { if (e.target.files[0]) setFile(e.target.files[0]); }
+
+  function setFile(f) {
+    if (f.type !== 'application/pdf') { alert('Only PDF files are supported.'); return; }
+    selectedFile = f;
+    document.getElementById('file-name').textContent = f.name;
+    document.getElementById('file-size').textContent = `${(f.size/1024).toFixed(1)} KB · PDF`;
+    document.getElementById('file-preview').classList.remove('hidden');
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('file-preview').classList.add('hidden');
+  }
+
+  // ── Status & steps ──────────────────────────────────────────────────────────
+  function setStatus(text, color) {
+    const badge = document.getElementById('status-badge');
+    const dot = { green:'bg-green-400', yellow:'bg-yellow-400 animate-pulse', red:'bg-red-400' }[color] || 'bg-slate-500';
+    badge.innerHTML = `<span class="w-2 h-2 rounded-full ${dot}"></span> ${text}`;
+  }
+
+  const STEP_NUMS = { 'step-ie':'1','step-da':'2','step-es':'3' };
+  function setStep(id, done, active) {
+    const el = document.getElementById(id);
+    const dot = el.querySelector('span:first-child'), lbl = el.querySelector('span:last-child');
+    if (done)        { dot.className='w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px]'; dot.textContent='✓'; lbl.className='text-green-400'; }
+    else if (active) { dot.className='w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] animate-pulse'; dot.textContent='…'; lbl.className='text-blue-400'; }
+    else             { dot.className='w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-slate-500 text-[10px]'; dot.textContent=STEP_NUMS[id]||'?'; lbl.className='text-slate-500'; }
+  }
+  function resetSteps() { Object.keys(STEP_NUMS).forEach(s => setStep(s,false,false)); }
+
+  function addLog(text, type='normal') {
+    const t = document.getElementById('log-terminal');
+    const d = document.createElement('div');
+    d.className = `log-line ${type==='error'?'text-red-400':type==='info'?'text-blue-400':'text-green-400'}`;
+    d.textContent = text;
+    t.appendChild(d); t.scrollTop = t.scrollHeight;
+  }
+
+  function clearLogs() {
+    document.getElementById('log-terminal').innerHTML = '<div class="text-slate-600">// Cleared.</div>';
+    document.getElementById('result-area').innerHTML = '<div class="text-slate-500 text-sm italic">Run the pipeline to see results...</div>';
+    document.getElementById('state-diff').innerHTML = '<div class="text-slate-500 text-sm italic">Run the pipeline to see state changes...</div>';
+    document.getElementById('chart-card').classList.add('hidden');
+    resetSteps();
+  }
+
+  // ── Before/After diff ────────────────────────────────────────────────────────
+  const stateLabels = {
+    active_campaigns_count: "Active Campaigns",
+    avg_customer_rating: "Avg. Customer Rating",
+    regional_order_volume: "Regional Order Volume",
+    pending_incident_tickets: "Pending Incident Tickets"
+  };
+
+  function renderStateDiff(before, after, projectedOutcomes = []) {
+    let html = '';
+    
+    // 1. Render AI-Projected Outcomes (Simulation Forecast)
+    if (projectedOutcomes && projectedOutcomes.length > 0) {
+      html += '<div class="mb-4">';
+      html += '<div class="text-[10px] font-bold text-violet-400 uppercase tracking-wider mb-2">🔮 AI Simulation Forecast</div>';
+      html += '<div class="space-y-1.5 mono text-xs">';
+      projectedOutcomes.forEach(o => {
+        html += `<div class="flex flex-col p-2 rounded bg-slate-800/40 border border-slate-800">
+          <div class="text-slate-400 font-semibold mb-0.5">${o.metric}</div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-500">${o.before_state}</span>
+            <span class="text-slate-400">➔</span>
+            <span class="text-violet-400 font-semibold">${o.after_state}</span>
+          </div>
+        </div>`;
+      });
+      html += '</div></div>';
+    }
+    
+    // 2. Render Database Sandbox Metrics
+    html += '<div>';
+    html += '<div class="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-2">🗄️ SQLite Database Sandbox</div>';
+    html += '<div class="space-y-1 mono text-xs">';
+    Object.keys(before).forEach(k => {
+      const label = stateLabels[k];
+      if (!label) return; // Skip keys that aren't mapped (like delivery fee)
+      const b=before[k], a=after[k], changed=b!==a;
+      html += `<div class="flex items-center justify-between px-3 py-1.5 rounded ${changed?'diff-add':''}">
+        <span class="text-slate-400">${label}</span>
+        <span class="${changed?'text-green-400 font-semibold':'text-slate-300'}">${changed?`${b} ➔ ${a}`:`${b} (Unchanged)`}</span>
+      </div>`;
+    });
+    html += '</div></div>';
+    
+    document.getElementById('state-diff').innerHTML = html;
+  }
+
+  // ── AI-decided chart ─────────────────────────────────────────────────────────
+  function renderChart(cs) {
+    if (!cs?.generate_chart) { document.getElementById('chart-card').classList.add('hidden'); return; }
+    document.getElementById('chart-card').classList.remove('hidden');
+    document.getElementById('chart-reason').textContent = cs.reason || '';
+    const ctx = document.getElementById('insight-chart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type: cs.chart_type || 'bar',
+      data: {
+        labels: cs.labels || [],
+        datasets: [{ label: cs.metric_name || 'Metric', data: cs.values || [],
+          backgroundColor:['rgba(99,102,241,.6)','rgba(239,68,68,.6)','rgba(34,197,94,.6)','rgba(251,191,36,.6)'],
+          borderColor:['#6366f1','#ef4444','#22c55e','#fbbf24'], borderWidth:1.5, borderRadius:4 }]
+      },
+      options: {
+        responsive:true,
+        plugins:{ legend:{ labels:{ color:'#94a3b8', font:{size:11} } } },
+        scales: {
+          x:{ ticks:{color:'#64748b'}, grid:{color:'rgba(71,85,105,.25)'} },
+          y:{ ticks:{color:'#64748b'}, grid:{color:'rgba(71,85,105,.25)'} }
+        }
+      }
+    });
+  }
+
+  // ── Result cards ─────────────────────────────────────────────────────────────
+  function renderResult(data) {
+    const r = document.getElementById('result-area');
+    const sev = data.impact?.severity || 'N/A';
+    const sevColor = {CRITICAL:'text-red-400',HIGH:'text-orange-400',MEDIUM:'text-yellow-400',LOW:'text-green-400'}[sev]||'text-slate-300';
+    r.innerHTML = `
+      <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-xs text-blue-400 font-semibold">🔍 Insight</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 font-mono">${data.input_type||'text'}</span>
+        </div>
+        <div class="text-sm text-white">${data.insight?.anomaly||'N/A'}</div>
+        <div class="text-xs text-slate-400 mt-1">Cause: ${data.insight?.primary_cause||'N/A'}</div>
+        ${data.insight?.input_summary?`<div class="text-xs text-slate-500 mt-1 italic">${data.insight.input_summary}</div>`:''}
+      </div>
+      <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-xs text-orange-400 font-semibold">📊 Impact</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 ${sevColor} font-semibold">${sev}</span>
+          <span class="text-xs text-slate-400">${data.impact?.financial_risk_estimate||''}</span>
+        </div>
+        <div class="text-sm text-white">${data.impact?.strategic_implication||'N/A'}</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <div class="text-xs text-green-400 font-semibold mb-1">⚡ Action Executed</div>
+        <div class="text-sm text-white font-semibold mb-1">${data.recommended_action?.action_title||'Custom Action'}</div>
+        <div class="text-xs text-slate-300 mb-2 italic">"${data.recommended_action?.decision_reasoning||'N/A'}"</div>
+        <div class="mono text-xs text-green-300">Type: ${data.recommended_action?.action_type||'N/A'}</div>
+      </div>`;
+  }
+
+  // ── Run pipeline ─────────────────────────────────────────────────────────────
+  async function runPipeline() {
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    document.getElementById('log-terminal').innerHTML = '';
+    resetSteps();
+    setStatus('Running agents...','yellow');
+    document.getElementById('chart-card').classList.add('hidden');
+
+    const steps = ['step-ie','step-da','step-es'];
+    let idx = 0;
+    const iv = setInterval(() => {
+      if (idx>0) setStep(steps[idx-1],true,false);
+      if (idx<steps.length) { setStep(steps[idx],false,true); idx++; }
+      else clearInterval(iv);
+    }, 1500);
+
+    addLog('> Initializing Antigravity pipeline...','info');
+
+    try {
+      let res;
+
+      if (currentTab === 'pdf' && selectedFile) {
+        const form = new FormData();
+        form.append('file', selectedFile);
+        const ctx = document.getElementById('file-context').value.trim();
+        if (ctx) form.append('text', ctx);
+        addLog(`> Uploading PDF to Gemini File API: ${selectedFile.name}`, 'info');
+        res = await fetch(`${API}/api/v1/test/upload`, { method:'POST', body:form });
+      } else {
+        const content = document.getElementById('input-text').value.trim();
+        if (!content) {
+          alert('Please enter text or a URL.');
+          clearInterval(iv); resetSteps(); setStatus('Idle',''); btn.disabled=false; return;
+        }
+        const isUrl = /^https?:\/\//i.test(content);
+        if (isUrl) addLog(`> Extracting article content via trafilatura...`, 'info');
+        res = await fetch(`${API}/api/v1/test/analyze`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ source:'test_console', data_type:'text/plain', content })
+        });
+      }
+
+      clearInterval(iv);
+      steps.forEach(s => setStep(s,true,false));
+
+      if (!res.ok) {
+        let msg = `Server error ${res.status}`;
+        try { const e=await res.json(); msg=e.detail||msg; } catch(_) { msg=await res.text().catch(()=>msg); }
+        addLog(`> ERROR: ${msg}`, 'error');
+        setStatus('Error','red');
+      } else {
+        const data = await res.json();
+        document.getElementById('input-type-badge').textContent = data.input_type||'text';
+        data.execution_logs?.forEach(l => addLog(l));
+        addLog(`> ✅ Complete. Session: ${data.session_id}`, 'info');
+        renderResult(data);
+        renderStateDiff(data.state_change?.before||{}, data.state_change?.after||{}, data.recommended_action?.projected_outcomes||[]);
+        renderChart(data.impact?.chart_suggestion);
+        setStatus('Complete','green');
+        loadDashboard();
+      }
+    } catch(e) {
+      clearInterval(iv);
+      addLog(`> NETWORK ERROR: ${e.message}`, 'error');
+      setStatus('Error','red');
+    }
+    btn.disabled = false;
+  }
+
+  // ── Dashboard ────────────────────────────────────────────────────────────────
+  async function loadDashboard() {
+    try {
+      const data = await (await fetch(`${API}/api/v1/test/dashboard-state`)).json();
+      const c = document.getElementById('campaigns-table');
+      if (!data.active_campaigns?.length) {
+        c.innerHTML='<div class="text-slate-500 text-sm italic">No active campaigns yet.</div>'; return;
+      }
+      c.innerHTML = `<table class="w-full text-xs">
+        <thead><tr class="text-slate-400 border-b border-slate-800">
+          <th class="text-left pb-2">Code</th><th class="text-left pb-2">Discount</th>
+          <th class="text-left pb-2">Region</th><th class="text-left pb-2">Reach</th>
+        </tr></thead><tbody>
+        ${data.active_campaigns.map(c=>`<tr class="border-b border-slate-800/30">
+          <td class="py-1.5 mono text-green-400">${c.promo_code}</td>
+          <td class="py-1.5 text-white">${c.discount_percentage}%</td>
+          <td class="py-1.5 text-slate-300">${c.target_region}</td>
+          <td class="py-1.5 text-slate-300">${c.projected_reach?.toLocaleString()}</td>
+        </tr>`).join('')}
+        </tbody></table>`;
+    } catch(_) {}
+  }
+
+  async function resetSandbox() {
+    if (!confirm('Reset all sandbox data to defaults?')) return;
+    await fetch(`${API}/api/v1/test/reset-state`, {method:'POST'});
+    clearLogs(); loadDashboard(); setStatus('Reset','');
+  }
+
+  window.onload = loadDashboard;
+</script>
+</body>
+</html>

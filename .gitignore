@@ -1,0 +1,79 @@
+# ==============================================================================
+# 🌌 Nexus Ops - Master Git Ignore Configuration
+# ==============================================================================
+
+# ── Python / Backend ignores ────────────────────────────────────────────────
+__pycache__/
+backend/__pycache__/
+*.py[cod]
+backend/*.py[cod]
+*$py.class
+backend/*$py.class
+.pytest_cache/
+backend/.pytest_cache/
+.coverage
+backend/.coverage
+htmlcov/
+backend/htmlcov/
+.venv/
+venv/
+backend/venv/
+backend/.venv/
+ENV/
+env/
+backend/env/
+backend/ENV/
+.env
+backend/.env
+.env.development
+.env.production
+firebase-service-account.json
+backend/firebase-service-account.json
+
+# SQLite local databases
+*.db
+backend/*.db
+backend/sandbox.db
+*.sqlite3
+backend/*.sqlite3
+
+# ── Flutter / Mobile App ignores ─────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+Mobile App/build/
+Mobile App/.dart_tool/
+Mobile App/.flutter-plugins
+Mobile App/.flutter-plugins-dependencies
+Mobile App/.packages
+
+# Web-specific Flutter outputs
+Mobile App/web/flutter_bootstrap.js
+
+# ── IDE & Editor Settings ──────────────────────────────────────────────────
+.idea/
+backend/.idea/
+Mobile App/.idea/
+*.iml
+backend/*.iml
+Mobile App/*.iml
+*.ipr
+*.iws
+.vscode/
+backend/.vscode/
+Mobile App/.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# ── OS and System Junk ──────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

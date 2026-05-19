@@ -1,0 +1,20 @@
+# ==============================================================================
+# Python Version: 3.12.5  (minimum required: 3.11+)
+# Install: pip install -r requirements.txt
+# ==============================================================================
+
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+sqlalchemy>=2.0.0
+python-dotenv>=1.0.0
+firebase-admin>=6.5.0
+google-genai>=2.3.0
+jinja2>=3.1.0
+httpx>=0.27.0
+aiosqlite>=0.20.0
+
+# --- Input Processing ---
+python-multipart>=0.0.9    # PDF file upload support (FastAPI multipart)
+pypdf>=4.0.0               # PDF text fallback (if Gemini File API unavailable)
+trafilatura>=2.0.0         # Clean article extraction from URLs
