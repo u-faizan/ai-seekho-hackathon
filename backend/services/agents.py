@@ -311,7 +311,7 @@ def da_agent(impact_report: dict) -> dict:
 
 
 # ── ES-Agent (deterministic — no Gemini call) ─────────────────────────────────
-def es_agent(action_plan: dict, db_session, logs: list = None, insight: dict = None, impact: dict = None) -> dict:
+def es_agent(action_plan: dict, db_session, logs: list = None, insight: dict = None, impact: dict = None, webhook_url: str = None) -> dict:
     from database.models import SystemMetrics, Campaigns
 
     if logs is None:
@@ -384,7 +384,8 @@ def es_agent(action_plan: dict, db_session, logs: list = None, insight: dict = N
         db_session.commit()
         logs.append(f"[{ts()}] IncidentEngine: Ticket {ticket_id} (Priority: {priority})")
         logs.append(f"[{ts()}] MobileOps: Sent critical incident alert to Mobile App.")
-        if DISCORD_WEBHOOK_URL:
+        active_webhook = (webhook_url or DISCORD_WEBHOOK_URL or "").strip()
+        if active_webhook:
             try:
                 _insight_text = insight.get('anomaly', 'N/A') if insight else 'N/A'
                 _impact_text = impact.get('strategic_implication', 'N/A') if impact else 'N/A'
@@ -416,7 +417,7 @@ def es_agent(action_plan: dict, db_session, logs: list = None, insight: dict = N
                 }
                 
                 with httpx.Client(timeout=5) as hx:
-                    hx.post(DISCORD_WEBHOOK_URL, json=payload)
+                    hx.post(active_webhook, json=payload)
                 logs.append(f"[{ts()}] Discord: Alert posted.")
             except Exception as e:
                 logs.append(f"[{ts()}] Discord: Webhook failed ({e}).")
@@ -426,7 +427,8 @@ def es_agent(action_plan: dict, db_session, logs: list = None, insight: dict = N
         # Handle free-form AI suggested actions (Custom Actions)
         logs.append(f"[{ts()}] ActionRegistry: Generated Custom Strategic Recommendation - {action_type}")
         logs.append(f"[{ts()}] MobileOps: Pushed custom recommendation alert to Mobile Dashboard.")
-        if DISCORD_WEBHOOK_URL:
+        active_webhook = (webhook_url or DISCORD_WEBHOOK_URL or "").strip()
+        if active_webhook:
             try:
                 _insight_text = insight.get('anomaly', 'N/A') if insight else 'N/A'
                 _impact_text = impact.get('strategic_implication', 'N/A') if impact else 'N/A'
@@ -456,7 +458,7 @@ def es_agent(action_plan: dict, db_session, logs: list = None, insight: dict = N
                     }]
                 }
                 with httpx.Client(timeout=5) as hx:
-                    hx.post(DISCORD_WEBHOOK_URL, json=payload)
+                    hx.post(active_webhook, json=payload)
                 logs.append(f"[{ts()}] Discord: Suggestion alert posted.")
             except Exception as e:
                 logs.append(f"[{ts()}] Discord: Webhook failed ({e}).")
@@ -481,6 +483,7 @@ def run_pipeline(
     file_bytes: bytes = None,
     file_mime:  str   = None,
     filename:   str   = None,
+    webhook_url: str = None,
 ) -> dict:
     """
     Full Antigravity pipeline:
@@ -531,7 +534,7 @@ def run_pipeline(
     logs.append(f"[{ts()}] DA-Agent [ACTION]: Selected {act_type} for execution.")
     
     logs.append(f"[{ts()}] Orchestrator: Handoff to ES-Agent for simulation...")
-    simulation = es_agent(action_plan, db_session, logs=logs, insight=insight, impact=impact)
+    simulation = es_agent(action_plan, db_session, logs=logs, insight=insight, impact=impact, webhook_url=webhook_url)
 
     # Step E: Audit log
     db_session.add(UserSessions(

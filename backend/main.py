@@ -54,6 +54,7 @@ class AnalysisRequest(BaseModel):
     source: str = "manual_input"
     data_type: str = "text/plain"
     content: str
+    webhook_url: Optional[str] = None
 
 
 class ActionExecutionRequest(BaseModel):
@@ -80,10 +81,25 @@ async def analyze(
     if not request.content.strip():
         raise HTTPException(status_code=400, detail="Content field cannot be empty.")
 
+    # Resolve webhook URL: check request payload first, fallback to user's Firestore profile
+    webhook_url = request.webhook_url
+    if not webhook_url:
+        try:
+            from firebase_admin import firestore
+            fs_db = firestore.client()
+            user_ref = fs_db.collection("users").document(current_user["uid"])
+            user_doc = user_ref.get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict() or {}
+                webhook_url = user_data.get("webhookUrl")
+        except Exception as e:
+            print(f"[WARN] Firestore webhookUrl lookup failed for user {current_user.get('uid')}: {e}")
+
     result = run_pipeline(
         raw_input=request.content,
         user=current_user,
         db_session=db,
+        webhook_url=webhook_url,
     )
     return result
 
@@ -110,6 +126,7 @@ async def test_analyze(
             raw_input=request.content,
             user=dev_user,
             db_session=db,
+            webhook_url=request.webhook_url,
         )
         return result
     except Exception as e:
@@ -163,6 +180,7 @@ async def test_reset_state(db: Session = Depends(get_db)):
 async def test_upload(
     file: UploadFile = File(...),
     text: Optional[str] = Form(default=""),
+    webhook_url: Optional[str] = Form(default=None),
     db: Session = Depends(get_db),
 ):
     """
@@ -190,6 +208,7 @@ async def test_upload(
             file_bytes=file_bytes,
             file_mime=file.content_type,
             filename=file.filename,
+            webhook_url=webhook_url,
         )
         return result
     except Exception as e:
