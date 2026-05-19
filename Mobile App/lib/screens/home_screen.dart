@@ -37,6 +37,32 @@ class _HomeScreenState extends State<HomeScreen>
     )..repeat(reverse: true);
   }
 
+  String _historyInsightText(dynamic insight) {
+    if (insight is Map) {
+      return insight['anomaly']?.toString() ?? 'Analysis complete';
+    }
+    if (insight is String && insight.isNotEmpty) return insight;
+    return 'Analysis complete';
+  }
+
+  String _historySeverity(dynamic impact, dynamic severity) {
+    if (severity is String && severity.isNotEmpty) return severity;
+    if (impact is Map) {
+      return impact['severity']?.toString() ?? 'LOW';
+    }
+    return 'LOW';
+  }
+
+  String _historyActionText(dynamic action, dynamic actionTaken) {
+    if (action is Map) {
+      return action['action_title']?.toString() ??
+          action['action_type']?.toString() ??
+          'No action required';
+    }
+    if (actionTaken is String && actionTaken.isNotEmpty) return actionTaken;
+    return 'No action required';
+  }
+
   Future<void> _saveHistoryToFirebase(String input, Map<String, dynamic> resultData) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -49,9 +75,12 @@ class _HomeScreenState extends State<HomeScreen>
           .add({
         'timestamp': FieldValue.serverTimestamp(),
         'input': input,
-        'insight': resultData['insight'] ?? 'Analysis complete',
-        'severity': resultData['severity'] ?? 'Low',
-        'action': resultData['action_taken'] ?? 'No action required',
+        'insight': _historyInsightText(resultData['insight']),
+        'severity': _historySeverity(resultData['impact'], resultData['severity']),
+        'action': _historyActionText(
+          resultData['recommended_action'],
+          resultData['action_taken'],
+        ),
       });
     } catch (e) {
       debugPrint('Error saving history: $e');

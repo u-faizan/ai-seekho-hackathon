@@ -14,6 +14,31 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final user = FirebaseAuth.instance.currentUser;
 
+  String _asDisplayString(dynamic value, {String fallback = 'N/A'}) {
+    if (value == null) return fallback;
+    if (value is String) return value.isEmpty ? fallback : value;
+    if (value is Map) {
+      final map = value;
+      for (final key in [
+        'anomaly',
+        'action_title',
+        'action_type',
+        'strategic_implication',
+        'primary_cause',
+        'severity',
+      ]) {
+        final text = map[key]?.toString();
+        if (text != null && text.isNotEmpty) return text;
+      }
+    }
+    final text = value.toString();
+    return text.isEmpty ? fallback : text;
+  }
+
+  String _severityLabel(dynamic value) {
+    return _asDisplayString(value, fallback: 'LOW').toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,12 +88,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ? timestamp.toDate().toLocal().toString().substring(0, 16)
                             : 'Just now';
                         
+                        final impact = doc['impact'];
+                        final severity = doc['severity'] ??
+                            (impact is Map ? impact['severity'] : null);
+
                         return _SessionTile(session: {
                           'id': docs[i].id.substring(0, 8).toUpperCase(),
-                          'title': doc['input'] ?? 'Analyzed Document',
-                          'insight': doc['insight'] ?? 'N/A',
-                          'severity': (doc['severity'] ?? 'LOW').toString().toUpperCase(),
-                          'action': doc['action'] ?? 'N/A',
+                          'title': _asDisplayString(
+                            doc['input'],
+                            fallback: 'Analyzed Document',
+                          ),
+                          'insight': _asDisplayString(doc['insight']),
+                          'severity': _severityLabel(severity),
+                          'action': _asDisplayString(doc['action']),
                           'date': dateStr,
                         });
                       },
