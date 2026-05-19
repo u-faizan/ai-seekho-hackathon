@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'package:http_parser/http_parser.dart';
 import '../main.dart';
 
-const String _kApiBase = 'http://127.0.0.1:8000';
+const String _kApiBase = 'https://ai-seekho-backend-1000940240202.us-central1.run.app';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
