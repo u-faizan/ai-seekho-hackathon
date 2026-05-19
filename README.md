@@ -68,6 +68,25 @@ uvicorn main:app --reload
 ```
 👉 The Developer Console will boot up at **[http://127.0.0.1:8000](http://127.0.0.1:8000)**.
 
+### 5. Production Deployment to Google Cloud Run
+The backend includes a production-ready `Dockerfile` and is fully configured to run on Google Cloud Run:
+
+```bash
+# 1. Navigate to the backend directory
+cd backend
+
+# 2. Deploy directly from source
+gcloud run deploy ai-seekho-backend \
+  --source . \
+  --project long-ceiling-496821-m7 \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars="OPENROUTER_API_KEY=sk-or-v1-af...,LLM_PROVIDER=openrouter,ENV=production"
+```
+
+*   **Live Backend Base URL:** `https://ai-seekho-backend-1000940240202.us-central1.run.app`
+*   **Live Web Developer Console:** `https://ai-seekho-backend-1000940240202.us-central1.run.app/`
+
 ---
 
 ## 📱 Mobile App Setup & Execution (`/Mobile App`)
