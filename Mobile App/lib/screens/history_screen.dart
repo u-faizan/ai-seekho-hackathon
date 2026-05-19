@@ -159,6 +159,58 @@ class _SessionTileState extends State<_SessionTile> {
     }
   }
 
+  Widget _buildTitle(String title) {
+    final trimmed = title.trim();
+    final lower = trimmed.toLowerCase();
+    final isUrl = lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('www.');
+    
+    if (isUrl) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF6FF), // Gorgeous light blue background
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFFDBEAFE)), // Premium light-blue border
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.open_in_new_rounded,
+              size: 13,
+              color: Color(0xFF3B82F6), // Premium soft blue icon
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                trimmed,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2563EB), // Vibrant blue hyperlink color
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return Text(
+      title,
+      style: GoogleFonts.inter(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 2,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.session;
@@ -196,11 +248,7 @@ class _SessionTileState extends State<_SessionTile> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s['title'] ?? '',
-                      style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary)),
+                  _buildTitle(s['title'] ?? ''),
                   const SizedBox(height: 2),
                   Text(s['date'] ?? '',
                       style: GoogleFonts.inter(

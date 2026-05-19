@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Ops — Autonomous Business Operations Agent</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    
+    <!-- Styling stylesheet -->
+    <link rel="stylesheet" href="index.css">
+    
+    <!-- Lucide CDN for modern vector icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <!-- ==============================================================================
+         🔐 PRESTIGE AUTHENTICATION WINDOW (LOGIN / SIGNUP)
+         ============================================================================== -->
+    <div id="authContainer" class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <img src="assets/logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 14px;">
+                </div>
+                <h2 id="authTitle">Antigravity Ops</h2>
+                <p id="authSubtitle">Please log in to access the agentic console</p>
+            </div>
+            
+            <form id="authForm" onsubmit="return false;">
+                <!-- Full Name Field (Signup only) -->
+                <div id="nameFieldGroup" class="form-group hidden">
+                    <label class="form-label" for="regName">Full Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="regName" class="auth-input" placeholder="e.g. Faizan Khan">
+                        <i data-lucide="user"></i>
+                    </div>
+                </div>
+                
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label class="form-label" for="authEmail">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="authEmail" class="auth-input" placeholder="admin@nexusops.local" required autocomplete="email">
+                        <i data-lucide="mail"></i>
+                    </div>
+                </div>
+                
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label class="form-label" for="authPassword">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="authPassword" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+                        <i data-lucide="lock"></i>
+                    </div>
+                </div>
+                
+                <!-- Error Alert Box -->
+                <div id="authErrorAlert" class="alert-error hidden">
+                    <i data-lucide="alert-circle"></i>
+                    <span id="authErrorMsg">Error message here</span>
+                </div>
+                
+                <!-- Submit Action -->
+                <button type="submit" id="authSubmitBtn" class="auth-btn">
+                    <span>Sign In</span>
+                    <i data-lucide="arrow-right"></i>
+                </button>
+            </form>
+            
+            <div class="auth-footer">
+                <span id="authToggleHint">Don't have an account?</span>
+                <a href="#" id="authToggleBtn">Create account</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==============================================================================
+         🛡️ HIGH-END COLLABORATIVE WORKSPACE LAYOUT (SIDEBAR + MAIN VIEWS)
+         ============================================================================== -->
+    <div id="appContainer" class="app-container">
+        <!-- ── Sidebar ── -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <img src="assets/logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 9px;">
+                </div>
+                <div class="brand-info">
+                    <h1>Antigravity Ops</h1>
+                    <p>AI Business Agent</p>
+                </div>
+            </div>
+            
+            <!-- Navigation Menu -->
+            <ul class="nav-menu">
+                <li>
+                    <a class="nav-link active" onclick="switchView('operations', this)">
+                        <i data-lucide="zap"></i>
+                        <span>Operations Flow</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" onclick="switchView('history', this)">
+                        <i data-lucide="history"></i>
+                        <span>Run History</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" onclick="switchView('profile', this)">
+                        <i data-lucide="settings"></i>
+                        <span>Profile Settings</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Active Profile Snippet -->
+            <div class="user-profile-preview">
+                <div id="userAvatarChar" class="user-avatar">O</div>
+                <div class="user-preview-info">
+                    <div id="userPreviewName" class="user-preview-name">Operations Admin</div>
+                    <div class="user-preview-role">Administrator</div>
+                </div>
+            </div>
+            
+            <!-- Logout Action -->
+            <a id="logoutBtn" class="logout-btn">
+                <i data-lucide="log-out"></i>
+                <span>Sign Out</span>
+            </a>
+        </aside>
+
+        <!-- ── Main Content Viewport ── -->
+        <main class="main-viewport">
+            <header class="viewport-header">
+                <h2 id="currentTabLabel">Operations Flow</h2>
+                <div class="header-status">
+                    <div class="status-dot"></div>
+                    <span>SYSTEM ONLINE</span>
+                </div>
+            </header>
+            
+            <div class="content-frame">
+                <!-- ==========================================
+                     ⚡ VIEW: OPERATIONS
+                     ========================================== -->
+                <section id="viewOperations" class="view-section active">
+                    <div class="ops-grid">
+                        <div class="ops-card">
+                            <h3 class="ops-card-title">Input Type Selector</h3>
+                            
+                            <!-- Input Mode Selection -->
+                            <div class="mode-toggle-group">
+                                <button id="modeTextBtn" class="mode-toggle-chip active">
+                                    <i data-lucide="file-text"></i>
+                                    <span>Text / URL Input</span>
+                                </button>
+                                <button id="modePdfBtn" class="mode-toggle-chip">
+                                    <i data-lucide="file"></i>
+                                    <span>PDF Document</span>
+                                </button>
+                            </div>
+                            
+                            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+                            
+                            <!-- Area: Text Input -->
+                            <div id="opsTextInputArea">
+                                <textarea id="opsTextContent" class="text-area-input" placeholder="Paste a business report, incident description, or article URL here..."></textarea>
+                            </div>
+                            
+                            <!-- Area: PDF Document Picker -->
+                            <div id="opsPdfInputArea" class="hidden">
+                                <div id="dropzone" class="file-dropzone">
+                                    <div class="dropzone-icon">
+                                        <i data-lucide="upload-cloud"></i>
+                                    </div>
+                                    <h4>Drag & drop business PDF here</h4>
+                                    <p>or click to select file from storage</p>
+                                    <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;">
+                                </div>
+                                
+                                <div id="fileSelectionBadge" class="selected-file-badge hidden">
+                                    <div class="file-icon">
+                                        <i data-lucide="file-check"></i>
+                                    </div>
+                                    <div class="file-details">
+                                        <div id="selectedFileName" class="file-details-name">NASDAQ_AAPL_2024.pdf</div>
+                                        <div class="file-details-hint">Tap to replace file</div>
+                                    </div>
+                                    <div id="removeSelectedFile" class="file-remove-btn">
+                                        <i data-lucide="x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Dynamic Operations Error alert -->
+                            <div id="opsErrorAlert" class="alert-error hidden">
+                                <i data-lucide="alert-circle"></i>
+                                <span id="opsErrorMsg">Please enter a valid report text.</span>
+                            </div>
+                            
+                            <!-- Run Pipeline Command -->
+                            <button id="runPipelineBtn" class="auth-btn" style="max-width: 250px;">
+                                <i data-lucide="zap"></i>
+                                <span>Run Agentic Flow</span>
+                            </button>
+                            
+                            <!-- Loading Stepper Telemetry -->
+                            <div id="telemetryStepper" class="telemetry-pipeline hidden">
+                                <div id="stepIE" class="telemetry-step">
+                                    <div class="step-indicator">1</div>
+                                    <div class="step-details">
+                                        <h4>IE-Agent — Insight Extraction</h4>
+                                        <p>Analyzing context details and extracting core anomaly signals...</p>
+                                    </div>
+                                </div>
+                                <div id="stepDA" class="telemetry-step">
+                                    <div class="step-indicator">2</div>
+                                    <div class="step-details">
+                                        <h4>DA-Agent — Decision Making</h4>
+                                        <p>Formulating mitigation action parameters based on strategic severity...</p>
+                                    </div>
+                                </div>
+                                <div id="stepES" class="telemetry-step">
+                                    <div class="step-indicator">3</div>
+                                    <div class="step-details">
+                                        <h4>ES-Agent — Execution Simulator</h4>
+                                        <p>Executing actions deterministic sandbox state, launching notifications...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pipeline Output Results -->
+                        <div id="pipelineResultsFrame" class="results-grid hidden">
+                            <!-- Insight Card -->
+                            <div class="result-card">
+                                <span class="result-tag tag-insight">🧠  Insight</span>
+                                <div id="resInsightAnomaly" class="result-content" style="font-weight: 500; margin-bottom: 10px;">
+                                    Anomalous strategic deviation detected...
+                                </div>
+                                <div id="resInsightCause" class="result-content" style="color: var(--text-sub); font-size: 12.5px;">
+                                    Cause: N/A
+                                </div>
+                            </div>
+                            
+                            <!-- Impact Card -->
+                            <div class="result-card">
+                                <span class="result-tag tag-impact">💥  Impact</span>
+                                <div>
+                                    <span id="resImpactSeverity" class="severity-indicator severity-low">Severity: LOW</span>
+                                </div>
+                                <div id="resImpactImplication" class="result-content" style="margin-bottom: 10px;">
+                                    Strategic operational implications...
+                                </div>
+                                <div id="resImpactRisk" class="result-content" style="color: var(--text-sub); font-size: 12.5px;">
+                                    Financial Risk: N/A
+                                </div>
+                            </div>
+                            
+                            <!-- Action Card -->
+                            <div class="result-card">
+                                <span class="result-tag tag-action">🎯  Action</span>
+                                <div id="resActionTitle" class="result-content" style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">
+                                    Action Title here
+                                </div>
+                                <div id="resActionReasoning" class="result-content" style="font-style: italic; color: var(--text-sub); margin-bottom: 12px;">
+                                    Decision reasoning details...
+                                </div>
+                                <div class="result-meta">
+                                    <span id="resActionType" style="background-color: var(--bg-input); padding: 4px 8px; border-radius: 4px; font-weight: 600;">TYPE: N/A</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Forecast outcomes card -->
+                            <div class="result-card">
+                                <span class="result-tag tag-forecast">🔮  AI Simulation Forecast</span>
+                                <div id="resForecastContainer">
+                                    <!-- Items will be injected dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==========================================
+                     📜 VIEW: HISTORY
+                     ========================================== -->
+                <section id="viewHistory" class="view-section">
+                    <div id="historyList" class="history-list">
+                        <!-- Streamed History tiles injected here -->
+                        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            <i data-lucide="loader" style="width: 32px; height: 32px; animation: spin 1.2s linear infinite; margin-bottom: 10px;"></i>
+                            <p>Loading your operations history...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==========================================
+                     ⚙️ VIEW: PROFILE
+                     ========================================== -->
+                <section id="viewProfile" class="view-section">
+                    <div class="profile-grid">
+                        <!-- Profile Card -->
+                        <div class="profile-card">
+                            <div class="profile-avatar-row">
+                                <div id="profileAvatarChar" class="profile-avatar-big">O</div>
+                                <div class="profile-avatar-info">
+                                    <h3 id="profileHeaderName">Operations Admin</h3>
+                                    <p id="profileHeaderEmail">admin@nexusops.local</p>
+                                    <span class="profile-badge">Operations Admin</span>
+                                </div>
+                            </div>
+                            
+                            <form id="profileForm" onsubmit="return false;">
+                                <div class="profile-field">
+                                    <label for="profileName">Full Name</label>
+                                    <input type="text" id="profileName" placeholder="Update your name">
+                                </div>
+                                <div class="profile-field">
+                                    <label for="profileEmail">Email Address</label>
+                                    <input type="email" id="profileEmail" readonly>
+                                </div>
+                                
+                                <button type="submit" id="saveProfileBtn" class="profile-save-btn">
+                                    <i data-lucide="save"></i>
+                                    <span>Save Profile</span>
+                                </button>
+                                
+                                <div id="profileSuccessAlert" class="alert-success hidden">
+                                    <i data-lucide="check-circle-2"></i>
+                                    <span>Saved to Firebase successfully!</span>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Discord Card -->
+                        <div class="profile-card">
+                            <h3 class="ops-card-title" style="margin-bottom: 5px;">Discord Integration</h3>
+                            <p style="font-size: 12px; color: var(--text-sub); line-height: 1.5; margin-bottom: 20px;">
+                                Rich embeds for your AI pipeline runs, telemetry states, and actions will be broadcast to your configured webhook URL.
+                            </p>
+                            
+                            <div class="profile-avatar-row" style="margin-bottom: 16px;">
+                                <div style="width: 40px; height: 40px; background-color: #5865F2; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: white;">
+                                    <i data-lucide="message-square"></i>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 13.5px; font-weight: 600;">Discord Webhook Alerts</h4>
+                                    <p style="font-size: 11px; color: var(--text-muted);">Real-time simulation sync</p>
+                                </div>
+                            </div>
+                            
+                            <div class="profile-field">
+                                <label for="profileWebhook">Webhook URL</label>
+                                <input type="url" id="profileWebhook" placeholder="https://discord.com/api/webhooks/...">
+                            </div>
+                            
+                            <button id="saveWebhookBtn" class="profile-save-btn" style="background: linear-gradient(135deg, #5865F2, #4752C4); box-shadow: 0 4px 12px rgba(88, 101, 242, 0.2);">
+                                <i data-lucide="check"></i>
+                                <span>Save Integration</span>
+                            </button>
+                            
+                            <div id="webhookSuccessAlert" class="alert-success hidden" style="border-color: rgba(16, 185, 129, 0.25); background: var(--success-light); color: var(--success);">
+                                <i data-lucide="check-circle-2"></i>
+                                <span>Webhook config updated!</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==============================================================================
+         ⚙️ CORE CONTROLLER FRAMEWORK
+         ============================================================================== -->
+    
+    <!-- Firebase core v9 SDK packages (Modular via ESM) -->
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+          "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+        }
+      }
+    </script>
+    
+    <!-- Main JS entrypoint -->
+    <script type="module" src="app.js"></script>
+    
+    <!-- Inline CSS for spin helper -->
+    <style>
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    </style>
+</body>
+</html>

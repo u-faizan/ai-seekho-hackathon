@@ -8,7 +8,28 @@ import 'dart:convert';
 import 'package:http_parser/http_parser.dart';
 import '../main.dart';
 
-const String _kApiBase = 'https://ai-seekho-backend-1000940240202.us-central1.run.app';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+// Choose your backend target:
+// - Set to false to use the high-performance live Google Cloud Run backend.
+// - Set to true to test against your local FastAPI backend server.
+const bool _useLocalBackend = false;
+
+String get _kApiBase {
+  if (!_useLocalBackend) {
+    return 'https://ai-seekho-backend-1000940240202.us-central1.run.app';
+  }
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  }
+  // Android Emulator requires 10.0.2.2 to access the host's localhost (127.0.0.1)
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+  // iOS Simulator & Desktop apps can use 127.0.0.1 / localhost directly
+  return 'http://127.0.0.1:8000';
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
