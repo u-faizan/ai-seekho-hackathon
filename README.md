@@ -1,10 +1,10 @@
-# 🌌 Nexus Ops: Autonomous Business Operations Agent
+# Nexus Ops: Autonomous Business Operations Agent
 
 Nexus Ops is a state-of-the-art, cloud-backed autonomous business operations platform. It orchestrates a multi-agent AI pipeline to ingest business reports (via text, URLs, or raw PDFs), detect revenue/operational anomalies, dynamically formulate optimal mitigation strategies, simulate live executions inside a sandbox database, and push real-time telemetry updates to a premium Flutter-based mobile dashboard.
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 The ecosystem consists of two core decoupled systems:
 1. **Backend (`/backend`)**: A robust FastAPI application executing the native multi-agent pipeline using the `google-genai` SDK and backed by a local SQLite Sandbox Database.
@@ -12,7 +12,7 @@ The ecosystem consists of two core decoupled systems:
 
 ---
 
-## 🧠 The Agentic Pipeline Flow
+## The Agentic Pipeline Flow
 
 The AI pipeline is engineered for speed, cost-efficiency, and total predictability:
 1. **Ingress Preprocessing**: Accepts raw text, scraped web URLs, or multi-page PDFs (processed natively using the Gemini File API).
@@ -22,7 +22,7 @@ The AI pipeline is engineered for speed, cost-efficiency, and total predictabili
 
 ---
 
-## 🛠️ Backend Setup & Execution (`/backend`)
+## Backend Setup & Execution (`/backend`)
 
 The backend is built in **Python 3.10+**. Follow these precise steps to get it running:
 
@@ -66,7 +66,7 @@ Open the `.env` file and configure your keys:
 ```bash
 uvicorn main:app --reload
 ```
-👉 The Developer Console will boot up at **[http://127.0.0.1:8000](http://127.0.0.1:8000)**.
+The Developer Console will boot up at **[http://127.0.0.1:8000](http://127.0.0.1:8000)**.
 
 ### 5. Production Deployment to Google Cloud Run
 The backend includes a production-ready `Dockerfile` and is fully configured to run on Google Cloud Run:
@@ -89,7 +89,7 @@ gcloud run deploy ai-seekho-backend \
 
 ---
 
-## 📱 Mobile App Setup & Execution (`/Mobile App`)
+## Mobile App Setup & Execution (`/Mobile App`)
 
 The frontend console is built using **Flutter**. Follow these steps to build and run the client:
 
@@ -133,11 +133,11 @@ flutter run -d chrome
 
 ---
 
-## 📁 Repository Directory Structure
+## Repository Directory Structure
 
 ```text
 Google AI Seekho/
-├── backend/                  # 🐍 Python FastAPI Core
+├── backend/                  # Python FastAPI Core
 │   ├── main.py               # API Routes & App Entrypoint
 │   ├── core/                 # Security, Configs & Firebase Auth
 │   ├── database/             # SQLite Sandbox Database & Models
@@ -148,19 +148,19 @@ Google AI Seekho/
 │   │   ├── main.dart         # Flutter App Ingress
 │   │   └── screens/          # Auth, Profile, History & Ops Dashboard
 │   └── pubspec.yaml          # Flutter Configs & Assets
-└── README.md                 # 🌌 This Documentation
+└── README.md                 # This Documentation
 ```
 
 ---
 
-## 🚀 Key Features Implemented
+## Key Features Implemented
 * **Native PDF Processing**: Bypasses heavy local OCR. Uploaded PDFs are piped directly into Gemini's Native File API with custom content-type signaling for zero-latency analysis.
 * **Stream-Based Telemetry**: Flutter uses Firestore streams to deliver real-time, zero-refresh history states.
 * **Premium Theme & Brand**: Complete bespoke visual identity featuring custom assets, sleek dark mode aesthetics, dynamic glassmorphism indicators, and high-performance micro-animations.
 
 ---
 
-## 🧩 Solution Design Overview
+## Solution Design Overview
 
 Nexus Ops solves a critical operational challenge: **How can businesses react autonomously to unstructured reports, alerts, and documents — without human bottlenecks?**
 
@@ -171,7 +171,7 @@ Traditional business intelligence requires analysts to manually read reports, id
 
 ---
 
-## 🤖 Agents Developed
+## Agents Developed
 
 The pipeline uses **4 specialized agents** that execute sequentially. The IE+IA agents are merged into a single Gemini call for cost efficiency (2 LLM calls per run instead of 3).
 
@@ -190,7 +190,7 @@ The pipeline uses **4 specialized agents** that execute sequentially. The IE+IA 
 
 ---
 
-## 🔌 Real & Mock APIs Used
+## Real & Mock APIs Used
 
 ### Real APIs (Production Services)
 | Service | Usage | Details |
@@ -212,7 +212,7 @@ The pipeline uses **4 specialized agents** that execute sequentially. The IE+IA 
 
 ---
 
-## 🔗 Integrations Implemented
+## Integrations Implemented
 
 ### Backend ↔ Mobile App Integration
 - **Firebase Auth**: Flutter app authenticates users → sends JWT token → FastAPI verifies using `firebase-admin` SDK
@@ -235,7 +235,7 @@ User Input (Text/URL/PDF)
 
 ---
 
-## 📐 Architecture Diagram
+##  Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -268,7 +268,7 @@ User Input (Text/URL/PDF)
 
 ---
 
-## 🛡️ Security Model
+## Security Model
 * **Firebase JWT Authentication** protects all production API routes
 * **Service Account**: Backend uses `firebase-service-account.json` for server-side token verification
 * **CORS Middleware**: Configured for cross-origin Flutter ↔ FastAPI communication
@@ -276,7 +276,7 @@ User Input (Text/URL/PDF)
 
 ---
 
-## 🏆 Built With
+## Built With
 * **Google Gemini API** (gemini-2.0-flash, gemini-2.0-flash-lite)
 * **Google Antigravity** (AI-assisted development & orchestration)
 * **FastAPI** (Python 3.10+ backend)
