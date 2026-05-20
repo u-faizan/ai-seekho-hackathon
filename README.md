@@ -8,7 +8,7 @@ Nexus Ops is a state-of-the-art, cloud-backed autonomous business operations pla
 
 Here is a preview mockup showing the clean layouts and premium off-white design structure of the Nexus Ops web dashboard:
 
-![Mockup Preview](C:\Users\wajee\.gemini\antigravity-ide\brain\7ac5c0f9-72c7-4e58-b40c-d7c36e5ab675\media__1779228231556.png)
+![Mockup Preview](web/assets/web.png)
 
 ---
 
