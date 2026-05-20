@@ -33,7 +33,7 @@ This document details the production-ready architecture for the **Autonomous Bus
                                      ▼
  ┌───────────────────────────────────────────────────────────────────────────┐
  │                       GOOGLE GEMINI API SUITE                             │
- │       Gemini 2.5 Flash (Fast Parsing)  │  Gemini 2.5 Pro (Reasoning)       │
+ │   Gemini 2.0 Flash Lite (Text/URL)   │   Gemini 2.0 Flash (Native PDFs)   │
  └───────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -41,66 +41,54 @@ This document details the production-ready architecture for the **Autonomous Bus
 
 ## 🤖 2. Multi-Agent Design & Responsibilities
 
-The core of our intelligence engine is structured as a **Multi-Agent Chain** inside Google Antigravity. Each agent has a specialized domain, deterministic input/output contract, and distinct prompting directives.
+The core of our intelligence engine is structured as an **Optimized Multi-Agent Chain** inside Google Antigravity. To minimize rate limit constraints and latency, the pipeline merges **Insight Extraction (IE)** and **Impact Analysis (IA)** into a single, high-efficiency prompt execution.
 
 ```mermaid
 graph LR
-    Input[Unstructured Input] --> IE[1. IE-Agent<br>Insight Extraction]
-    IE -->|Structured Facts JSON| IA[2. IA-Agent<br>Impact Analysis]
-    IA -->|Implications JSON| DA[3. DA-Agent<br>Decision Agent]
-    DA -->|Action Payload| ES[4. ES-Agent<br>Execution Simulation]
+    Input[Unstructured Input] --> IEIA[1. IE-IA Agent<br>Extraction & Analysis]
+    IEIA -->|Facts & Severity JSON| DA[2. DA-Agent<br>Decision Agent]
+    DA -->|Action Payload| ES[3. ES-Agent<br>Execution Simulation]
     ES -->|Execution Trace & DB Change| Output[Unified JSON Output]
     
-    style IE fill:#e8f0fe,stroke:#4285f4,stroke-width:1px
-    style IA fill:#e8f0fe,stroke:#4285f4,stroke-width:1px
+    style IEIA fill:#e8f0fe,stroke:#4285f4,stroke-width:2px
     style DA fill:#e8f0fe,stroke:#4285f4,stroke-width:1px
     style ES fill:#e6f4ea,stroke:#34a853,stroke-width:2px
 ```
 
 ### Agent Directory & Specifications
 
-#### 1. Insight Extraction Agent (IE-Agent)
-* **Role**: Data Digestor & Fact Structurer.
+#### 1. Insight Extraction & Impact Analysis Agent (IE-IA Agent - MERGED)
+* **Role**: Data Digestor, Fact Structurer, & Operational Risk Evaluator.
 * **Responsibilities**:
-  * Ingests raw unstructured text (sales emails, PDF reports, news feeds, RSS, customer complaints).
+  * Ingests unstructured text (emails, web links, news) or native PDFs via the Gemini File API.
   * Cleans noise and isolates core anomalies, quantitative values, regions, and timestamps.
-  * Outputs standardized `StructuredFacts` JSON.
-* **Prompting Strategy / Directives**:
-  * *System Prompt:* "You are a world-class Data Extraction Agent. Filter out fluff and summarize nothing. Extract only raw facts, anomalies, trends, and variables. Output exactly to the required JSON schema."
-* **LLM Engine**: Gemini 2.5 Flash (for speed and high context window efficiency).
+  * Automatically assesses the extracted facts against business parameters (Revenue, Churn risk, SLA latency).
+  * Assigns severity levels (Low, Medium, High) and computes estimated risk impact.
+  * Outputs a consolidated `AnalysisResult` JSON containing both extracted facts and risk implications in a single LLM round-trip, **reducing API latency by 33%**.
+* **LLM Engine**: 
+  * `gemini-2.0-flash-lite`: Used for text and web URLs (offering higher free-tier request limits).
+  * `gemini-2.0-flash`: Used for PDFs, leveraging native multi-modal PDF parsing via the Gemini File API.
+* **Dual-Provider Support**: Supports both direct Google AI Studio connection and an OpenAI-compatible proxy (`openrouter`) with automated rate-limit exponential backoff and retry handlers.
 
-#### 2. Impact Analysis Agent (IA-Agent)
-* **Role**: Strategic Risk & Opportunity Evaluator.
-* **Responsibilities**:
-  * Receives `StructuredFacts` JSON.
-  * Assesses the impact of the extracted facts against business parameters (Revenue, Customer Retention, Brand Reputation, Supply Chain).
-  * Assigns severity scales (Low, Medium, High) and estimates potential financial implications.
-  * Outputs `ImpactImplications` JSON.
-* **Prompting Strategy / Directives**:
-  * *System Prompt:* "You are a senior Business Operations Analyst. Examine facts and compute business risk, resource strain, and potential revenue consequences. Connect facts logically to outcome forecasts."
-* **LLM Engine**: Gemini 2.5 Pro (for deep reasoning and chain-of-thought mathematical/strategic logic).
-
-#### 3. Decision Agent (D-Agent)
+#### 2. Decision Agent (DA-Agent)
 * **Role**: Operational Strategist & Action Router.
 * **Responsibilities**:
-  * Receives `ImpactImplications` JSON.
-  * Matches the impact profile to a defined **Action Registry** of available tools.
-  * Selects the single best corrective or proactive action (e.g., launch regional coupon, update checkout shipping rates, send auto-reimbursement to customer).
-  * Generates the target tool endpoint and exact execution payload.
+  * Receives `AnalysisResult` JSON.
+  * Matches the risk profile against the **Action Registry** of available mock operations.
+  * Selects the single best response action (e.g., triggering promo codes, modifying logistics fees, or queuing HubSpot customer emails).
+  * Formulates the exact payload parameters and JSON structure required to invoke the selected action.
   * Outputs `ActionPlan` JSON.
-* **Prompting Strategy / Directives**:
-  * *System Prompt:* "You are a Decision-Making Agent. Based on business risk profile and the Action Registry, choose the most effective, highest-ROI response. Formulate the exact payload parameters required by the selected tool."
-* **LLM Engine**: Gemini 2.5 Pro.
+* **LLM Engine**: `gemini-2.0-flash-lite` (via AI Studio or OpenRouter fallback).
 
-#### 4. Execution Simulation Agent (ES-Agent)
-* **Role**: Sandbox Coordinator & State Validator.
+#### 3. Execution Simulation Agent (ES-Agent)
+* **Role**: Sandbox Coordinator & State Validator (Deterministic Phase).
 * **Responsibilities**:
   * Receives `ActionPlan` JSON.
-  * Triggers the simulated mock API endpoints inside the Backend Action Registry.
-  * Monitors API responses and logs the micro-steps (e.g., "Connecting to Shopify Gateway...", "Verifying inventory...", "Applied 15% discount for region Lahore.").
-  * Compares the database state before and after the action.
-  * Outputs the final `SimulationResult` JSON including execution trace logs and state change deltas.
-* **LLM Engine**: Gemini 2.5 Flash / Deterministic Python Wrapper (hybrid execution).
+  * Triggers the corresponding mock action simulation within the backend registry without requiring another LLM call.
+  * Mutation tasks include: writing new campaigns to the SQLite database, updating logistics pricing rates, generating outbound `.html` emails, or dispatching Slack/Discord webhook incident reports.
+  * Computes the "Before vs. After" state change delta and logs every micro-step.
+  * Outputs final `SimulationResult` JSON including full trace logs.
+* **LLM Engine**: Non-LLM deterministic execution engine for high reliability and 0% hallucination risk.
 
 ---
 
@@ -112,10 +100,9 @@ Google Antigravity serves as our **State Orchestrator**. Rather than agents talk
 1. **Trigger Phase**: The FastAPI endpoint `/api/v1/analyze` receives raw data. It initializes an Antigravity Workflow Session.
 2. **Context Creation**: Antigravity creates a unique session UUID and saves the initial system metrics state (e.g., Active Campaigns, Store Sales).
 3. **Execution Pipeline**:
-   * **Step A (Extract)**: Antigravity passes raw input to `IE-Agent`. Updates state with `extracted_facts`.
-   * **Step B (Analyze)**: Antigravity feeds `extracted_facts` to `IA-Agent`. Updates state with `impact_report`.
-   * **Step C (Plan)**: Antigravity feeds `impact_report` to `D-Agent`. Updates state with `recommended_action`.
-   * **Step D (Simulate)**: Antigravity invokes `ES-Agent` with `recommended_action`. The ES-Agent executes mock scripts, updates the sqlite db, and updates state with `execution_logs` and `before_vs_after_state`.
+   * **Step A (Extract & Analyze)**: Antigravity passes the input to the merged `IE-IA Agent` using `gemini-2.0-flash-lite` (or `gemini-2.0-flash` for native PDFs). Updates state with the joint `extracted_facts` and `impact_report`.
+   * **Step B (Decide)**: Antigravity feeds results to the `DA-Agent` which maps the risk to a mock campaign, logistics, or CRM action payload. Updates state with `recommended_action`.
+   * **Step C (Simulate)**: Antigravity invokes the `ES-Agent` with `recommended_action`. The ES-Agent deterministic simulator mutates the SQLite db, logs state deltas, and updates state with `execution_logs` and `before_vs_after_state`.
 4. **Finalization Phase**: Antigravity compiles all step traces into a structured JSON payload, records execution latency, and returns the response synchronously to the HTTP request.
 
 ---
@@ -273,11 +260,9 @@ sequenceDiagram
     
     rect rgb(240, 248, 255)
         Note over AG, Gemini: Google Antigravity Orchestration Cycle
-        AG->>Gemini: Run IE-Agent: Process unstructured raw input
-        Gemini-->>AG: Returns StructuredFacts JSON
-        AG->>Gemini: Run IA-Agent: Evaluate operational risk impact
-        Gemini-->>AG: Returns ImpactImplications JSON
-        AG->>Gemini: Run DA-Agent: Decide optimal action path
+        AG->>Gemini: Run IE-IA Agent: Merged Extraction & Risk Analysis
+        Gemini-->>AG: Returns Joint AnalysisResult JSON
+        AG->>Gemini: Run DA-Agent: Decide optimal response action path
         Gemini-->>AG: Returns RecommendedAction JSON (Payload + Router)
     end
 
